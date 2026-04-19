@@ -39,9 +39,12 @@ struct ContentView: View {
                     .zIndex(9)
                 
                 LibraryView(store: store) { entry, slot in
-                    loadEntry(entry, slot: slot)
+                    // 先关闭库面板，避免 AVPlayerView 在遮罩动画中初始化导致首帧未上屏
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
                         showLibrary = false
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                        loadEntry(entry, slot: slot)
                     }
                 }
                 .frame(width: 800, height: 600)

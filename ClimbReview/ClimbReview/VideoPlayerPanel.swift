@@ -22,6 +22,7 @@ class VideoPlayerViewModel: ObservableObject {
 
     private var timeObserver: Any?
     private var durationObserver: NSKeyValueObservation?
+    private var playbackLikelyObserver: NSKeyValueObservation?
 
     init() {
         addTimeObserver()
@@ -29,6 +30,8 @@ class VideoPlayerViewModel: ObservableObject {
 
     deinit {
         removeTimeObserver()
+        durationObserver?.invalidate()
+        playbackLikelyObserver?.invalidate()
     }
 
     // MARK: 加载视频
@@ -44,6 +47,10 @@ class VideoPlayerViewModel: ObservableObject {
         startPoint = nil
         markers = []
 
+        // 清理旧的观察者
+        playbackLikelyObserver?.invalidate()
+        playbackLikelyObserver = nil
+
         let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
 
@@ -56,6 +63,8 @@ class VideoPlayerViewModel: ObservableObject {
                     self.hasVideo = true
                     self.videoTitle = url.deletingPathExtension().lastPathComponent
                     self.lastErrorMessage = nil
+                    // 等待第一帧准备好再 seek，修复黑屏问题
+                    self.waitForFirstFrame(item: item)
                 case .failed:
                     self.duration = 0
                     self.hasVideo = false
@@ -68,7 +77,43 @@ class VideoPlayerViewModel: ObservableObject {
         }
 
         player.replaceCurrentItem(with: item)
-        player.seek(to: .zero)
+        // 不再立即 seek，改在 waitForFirstFrame 中处理
+    }
+
+    /// 等待第一帧准备好后再 seek 到起点，确保正确显示首帧而非黑屏
+    private func waitForFirstFrame(item: AVPlayerItem) {
+        // 如果已经 likelyToKeepUp，直接 seek
+        if item.isPlaybackLikelyToKeepUp {
+            seekToStartAndPause()
+            return
+        }
+
+        // 监听 isPlaybackLikelyToKeepUp，等待缓冲区有足够数据
+        playbackLikelyObserver = item.observe(\.isPlaybackLikelyToKeepUp, options: [.new]) { [weak self] item, _ in
+            guard let self else { return }
+            if item.isPlaybackLikelyToKeepUp {
+                self.playbackLikelyObserver?.invalidate()
+                self.playbackLikelyObserver = nil
+                self.seekToStartAndPause()
+            }
+        }
+
+        // 超时保护：0.5 秒后强制 seek（避免某些情况下永远不触发）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self else { return }
+            self.playbackLikelyObserver?.invalidate()
+            self.playbackLikelyObserver = nil
+            self.seekToStartAndPause()
+        }
+    }
+
+    /// 跳转到起点并暂停，确保显示静态帧
+    private func seekToStartAndPause() {
+        let targetTime = startPoint ?? 0
+        let time = CMTime(seconds: targetTime, preferredTimescale: 600)
+        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        player.pause()
+        currentTime = targetTime
     }
 
     func unload() {
@@ -100,10 +145,26 @@ class VideoPlayerViewModel: ObservableObject {
         isPlaying ? pause() : play()
     }
 
-    func seek(to seconds: Double) {
-        let time = CMTime(seconds: seconds, preferredTimescale: 600)
-        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
-        currentTime = seconds
+    func seek(to seconds: Double, isUserScrubbing: Bool = true) {
+        let clamped = max(0, min(seconds, duration > 0 ? duration : seconds))
+        let time = CMTime(seconds: clamped, preferredTimescale: 600)
+
+        // 关键修复：0 秒位置放宽容差，允许落到最近可解码关键帧，避免黑屏
+        // 拖动/跳转到非 0 位置仍保持精准 seek
+        let useRelaxedTolerance = clamped <= 0.02
+        let tolerance: CMTime = useRelaxedTolerance ? .positiveInfinity : .zero
+
+        player.seek(to: time, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] finished in
+            guard let self, finished else { return }
+            // 仅在非拖动场景下强制回写，避免与滑块实时回调打架
+            if !isUserScrubbing || useRelaxedTolerance {
+                self.currentTime = self.player.currentTime().seconds.isFinite ? self.player.currentTime().seconds : clamped
+            }
+        }
+
+        if isUserScrubbing {
+            currentTime = clamped
+        }
     }
 
     func seekToStart() {
@@ -175,6 +236,7 @@ struct VideoPlayerPanel: View {
     @State private var showMarkersPanel = false
     @State private var isCapturingCover = false
     @State private var isHovering = false
+    @State private var isHoveringClearButton = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -207,20 +269,19 @@ struct VideoPlayerPanel: View {
                     }
                 }
                 .clipped()
-                .onHover { hovering in
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        isHovering = hovering
-                    }
-                }
 
                 // 悬浮标题栏
                 headerOverlay
+                
+                // 起点信息悬浮层（右下角）
+                startPointOverlay
             }
-
-            Divider()
-
-            // 起点设置栏
-            startPointBar
+            // 整个 ZStack 检测悬停，确保悬浮层上的交互不会导致悬停状态丢失
+            .onHover { hovering in
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isHovering = hovering
+                }
+            }
 
             Divider()
 
@@ -252,42 +313,26 @@ struct VideoPlayerPanel: View {
             
             HStack(spacing: 16) {
                 // 打点列表按钮
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showMarkersPanel.toggle()
-                    }
-                } label: {
-                    Image(systemName: "mappin.and.ellipse")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 1)
-                        .overlay(alignment: .topTrailing) {
-                            if !viewModel.markers.isEmpty {
-                                Text("\(viewModel.markers.count)")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 2)
-                                    .background(AppTheme.accent)
-                                    .foregroundColor(.white)
-                                    .clipShape(Capsule())
-                                    .offset(x: 10, y: -8)
-                            }
+                IconLabelButton(
+                    icon: "mappin.and.ellipse",
+                    label: "打点列表",
+                    badge: viewModel.markers.isEmpty ? nil : "\(viewModel.markers.count)",
+                    isDisabled: !viewModel.hasVideo,
+                    action: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showMarkersPanel.toggle()
                         }
-                }
-                .buttonStyle(.plain)
-                .disabled(!viewModel.hasVideo)
-                .help("查看打点列表")
+                    }
+                )
 
-                Button {
-                    openFilePicker()
-                } label: {
-                    Image(systemName: "folder.badge.plus")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 1)
-                }
-                .buttonStyle(.plain)
-                .help("打开视频文件")
+                // 添加视频按钮
+                IconLabelButton(
+                    icon: "folder.badge.plus",
+                    label: "添加视频",
+                    badge: nil,
+                    isDisabled: false,
+                    action: { openFilePicker() }
+                )
             }
         }
         .padding(.horizontal, 16)
@@ -296,97 +341,86 @@ struct VideoPlayerPanel: View {
         .opacity((isHovering && !showMarkersPanel) ? 1 : 0)
     }
 
-    // MARK: 起点设置栏
-
-    private var startPointBar: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "flag.fill")
-                .foregroundColor(AppTheme.accent)
-                .font(.system(size: 12))
-
-            if let sp = viewModel.startPoint {
-                Text("起点：\(formatTime(sp))")
-                    .font(.system(size: 12, weight: .medium, design: .monospaced))
-                    .foregroundColor(AppTheme.accent)
-
-                Button {
-                    startPointInput = String(format: "%.1f", sp)
-                    showStartPointEditor = true
-                } label: {
-                    Image(systemName: "pencil.circle.fill")
-                        .foregroundColor(AppTheme.primary)
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    viewModel.clearStartPoint()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(AppTheme.textSecondary.opacity(0.5))
-                }
-                .buttonStyle(.plain)
-            } else {
-                Text("未设置起点")
-                    .font(.system(size: 12))
-                    .foregroundColor(AppTheme.textSecondary)
-
-                Button {
-                    viewModel.setStartPointToCurrent()
-                } label: {
-                    Text("设为当前")
-                        .font(.system(size: 11, weight: .bold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(AppTheme.primary.opacity(0.1))
-                        .foregroundColor(AppTheme.primary)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .disabled(!viewModel.hasVideo)
-
-                Button {
-                    startPointInput = ""
-                    showStartPointEditor = true
-                } label: {
-                    Image(systemName: "keyboard")
-                        .foregroundColor(AppTheme.primary)
-                }
-                .buttonStyle(.plain)
-                .disabled(!viewModel.hasVideo)
-            }
-
+    // MARK: 起点信息悬浮层（左下角）
+    
+    private var startPointOverlay: some View {
+        VStack {
             Spacer()
-
-            // 设为封面按钮
-            if viewModel.hasVideo, entryID != nil {
-                Button {
-                    setCoverToCurrent()
-                } label: {
-                    HStack(spacing: 4) {
-                        if isCapturingCover {
-                            ProgressView().scaleEffect(0.5)
-                        } else {
-                            Image(systemName: "camera.shutter.button.fill")
+            HStack {
+                // 起点信息在左侧
+                HStack(spacing: 12) {
+                    if let sp = viewModel.startPoint {
+                        // 已设置起点状态
+                        HStack(spacing: 8) {
+                            Image(systemName: "flag.fill")
+                                .foregroundColor(.white)
+                                .font(.system(size: 12))
+                                .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                            
+                            Text("起点：\(formatTime(sp))")
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                            
+                            // 取消起点按钮 - 无底纯线风格，悬停显示背景
+                            Button {
+                                viewModel.clearStartPoint()
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                                    .frame(width: 20, height: 20)
+                            }
+                            .buttonStyle(.plain)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.gray.opacity(0.25))
+                                    .opacity(isHoveringClearButton ? 1 : 0)
+                            )
+                            .onHover { hovering in
+                                withAnimation(.easeOut(duration: 0.15)) {
+                                    isHoveringClearButton = hovering
+                                }
+                            }
                         }
-                        Text("设为封面")
-                            .font(.system(size: 11, weight: .bold))
+                    } else {
+                        // 未设置起点状态
+                        Button {
+                            viewModel.setStartPointToCurrent()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "flag.fill")
+                                    .font(.system(size: 12))
+                                    .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                                Text("将当前设置为起点")
+                                    .font(.system(size: 11, weight: .bold))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundColor(.white)
+                        .disabled(!viewModel.hasVideo)
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(AppTheme.primary)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
                 }
-                .buttonStyle(.plain)
-                .disabled(isCapturingCover)
+                .padding(.leading, 12)
+                .padding(.bottom, 8)
+                
+                Spacer()
+                
+                // 设为封面按钮在右侧
+                if viewModel.hasVideo, entryID != nil {
+                    CoverButton(
+                        isCapturing: isCapturingCover,
+                        action: { setCoverToCurrent() }
+                    )
+                    .padding(.trailing, 12)
+                    .padding(.bottom, 8)
+                }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(AppTheme.background.opacity(0.3))
-        .popover(isPresented: $showStartPointEditor, arrowEdge: .bottom) {
-            startPointEditorPopover
-        }
+        // 跟随标题栏的悬停显示逻辑
+        .opacity((isHovering && viewModel.hasVideo) ? 1 : 0)
+        .animation(.easeInOut(duration: 0.2), value: isHovering)
     }
 
     private var startPointEditorPopover: some View {
@@ -603,6 +637,126 @@ struct VideoPlayerPanel: View {
         let m = s / 60
         let sec = s % 60
         return String(format: "%d:%02d", m, sec)
+    }
+}
+
+// MARK: - 添加打点按钮（带 Popover 输入）
+
+// MARK: - 设为封面按钮（极简悬停提示）
+
+struct CoverButton: View {
+    let isCapturing: Bool
+    let action: () -> Void
+    
+    @State private var isHovering = false
+    
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                // 悬停背景
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.2))
+                    .opacity(isHovering ? 1 : 0)
+                
+                // 内容容器 - 固定高度
+                VStack(spacing: 8) {
+                    if isCapturing {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                            .frame(width: 20, height: 20)
+                    } else {
+                        Image(systemName: "camera.shutter.button.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                            .offset(y: 4) // 初始状态整体下移
+                    }
+                    
+                    Text("设为封面")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                        .opacity(isHovering ? 1 : 0)
+                        .offset(y: isHovering ? 0 : -2)
+                }
+                .padding(.vertical, 6)
+            }
+            .frame(width: 44, height: 48) // 固定高度
+            .scaleEffect(isHovering ? 1.05 : 1.0)
+            .offset(y: isHovering ? -5 : 0)
+        }
+        .buttonStyle(.plain)
+        .disabled(isCapturing)
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.2)) {
+                isHovering = hovering
+            }
+        }
+    }
+}
+
+// MARK: - 图标+文字悬停按钮（通用组件）
+
+struct IconLabelButton: View {
+    let icon: String
+    let label: String
+    let badge: String?
+    let isDisabled: Bool
+    let action: () -> Void
+    
+    @State private var isHovering = false
+    
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                // 悬停背景
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.2))
+                    .opacity(isHovering ? 1 : 0)
+                
+                // 内容容器
+                VStack(spacing: 8) {
+                    ZStack {
+                        Image(systemName: icon)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 1)
+                            .offset(y: 4)
+                        
+                        // 角标
+                        if let badge {
+                            Text(badge)
+                                .font(.system(size: 9, weight: .bold))
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(AppTheme.accent)
+                                .foregroundColor(.white)
+                                .clipShape(Capsule())
+                                .offset(x: 10, y: -8)
+                        }
+                    }
+                    
+                    Text(label)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.8), radius: 2, x: 0, y: 1)
+                        .opacity(isHovering ? 1 : 0)
+                        .offset(y: isHovering ? 0 : -2)
+                }
+                .padding(.vertical, 6)
+            }
+            .frame(width: 44, height: 48)
+            .scaleEffect(isHovering ? 1.05 : 1.0)
+            .offset(y: isHovering ? -5 : 0)
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.5 : 1)
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.2)) {
+                isHovering = hovering
+            }
+        }
     }
 }
 
