@@ -1,0 +1,192 @@
+{
+  "source": "/Users/waterkon/CodeBuddy/20260416001332/ClimbReview/ClimbReview/VideoPlayerPanel.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "查看打点列表",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 275
+        }
+      },
+      {
+        "comment": "",
+        "key": "打开视频文件",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 288
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 263
+        }
+      },
+      {
+        "comment": "",
+        "key": "未设置起点",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 331
+        }
+      },
+      {
+        "comment": "",
+        "key": "起点：%@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 310
+        }
+      },
+      {
+        "comment": "",
+        "key": "设为当前",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 338
+        }
+      },
+      {
+        "comment": "",
+        "key": "设为封面",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 373
+        }
+      },
+      {
+        "comment": "",
+        "key": "手动输入起点时间（秒）",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 396
+        }
+      },
+      {
+        "comment": "",
+        "key": "当前视频时长：%@",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 405
+        }
+      },
+      {
+        "comment": "",
+        "key": "秒",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 402
+        }
+      },
+      {
+        "comment": "",
+        "key": "例如：12.5",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 399
+        }
+      },
+      {
+        "comment": "",
+        "key": "确认",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 409
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 418
+        }
+      },
+      {
+        "comment": "",
+        "key": "拖入视频文件\n或点击「打开视频」",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 435
+        }
+      },
+      {
+        "comment": "",
+        "key": "在当前时间打点",
+        "location": {
+          "startingColumn": 15,
+          "startingLine": 629
+        }
+      },
+      {
+        "comment": "",
+        "key": "在 %@ 添加打点",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 632
+        }
+      },
+      {
+        "comment": "",
+        "key": "描述这个时刻…",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 634
+        }
+      },
+      {
+        "comment": "",
+        "key": "确认添加",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 639
+        }
+      },
+      {
+        "comment": "",
+        "key": "取消",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 642
+        }
+      },
+      {
+        "comment": "",
+        "key": "打点标记",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 675
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 678
+        }
+      },
+      {
+        "comment": "",
+        "key": "暂无打点标记",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 698
+        }
+      },
+      {
+        "comment": "",
+        "key": "编辑描述…",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 790
+        }
+      }
+    ]
+  },
+  "version": 1
+}

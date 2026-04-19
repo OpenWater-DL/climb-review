@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>攀岩复盘 — 设计方案预览</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0a0a0a;
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  /* ========= NAV ========= */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    gap: 0;
+    background: #111;
+    border-bottom: 1px solid #222;
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 14px 0;
+    background: none;
+    border: none;
+    color: #555;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-right: 1px solid #222;
+  }
+  .nav-btn:last-child { border-right: none; }
+  .nav-btn.active { color: #fff; background: #1a1a1a; }
+  .nav-btn:hover:not(.active) { color: #aaa; }
+
+  /* ========= SECTIONS ========= */
+  .section { display: none; padding-top: 48px; }
+  .section.active { display: block; }
+
+  /* ==============================
+     SCHEME 1: MIDNIGHT INDUSTRIAL
+     Dark + Orange Accent, Brutalist Grid
+  ============================== */
+  #s1 {
+    background: #0d0d0d;
+    min-height: 100vh;
+  }
+
+  .s1-app {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .s1-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    height: 52px;
+    background: #0d0d0d;
+    border-bottom: 1px solid #1e1e1e;
+    flex-shrink: 0;
+  }
+
+  .s1-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    color: #aaa;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
+  }
+  .s1-btn:hover { border-color: #ff6b00; color: #ff6b00; }
+  .s1-btn.primary {
+    background: #ff6b00;
+    border-color: #ff6b00;
+    color: #000;
+    font-weight: 700;
+  }
+  .s1-btn.primary:hover { background: #ff8c33; }
+
+  .s1-sep { width: 1px; height: 20px; background: #2a2a2a; }
+
+  .s1-logo {
+    margin-left: auto;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.15em;
+    color: #333;
+  }
+
+  .s1-players {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .s1-panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #1a1a1a;
+  }
+  .s1-panel:last-child { border-right: none; }
+
+  .s1-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #111;
+    border-bottom: 1px solid #1a1a1a;
+    flex-shrink: 0;
+  }
+
+  .s1-panel-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 0.1em;
+    color: #ff6b00;
+  }
+
+  .s1-panel-title {
+    font-size: 11px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .s1-video-area {
+    flex: 1;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .s1-video-hint {
+    text-align: center;
+    color: #2a2a2a;
+  }
+  .s1-video-hint .icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .s1-video-hint p {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+  }
+
+  /* mock video frame */
+  .s1-mock-video {
+    width: 90%;
+    height: 75%;
+    background: linear-gradient(135deg, #111 0%, #0d0d0d 100%);
+    border: 1px solid #1e1e1e;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .s1-mock-video::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(255,107,0,0.015) 3px,
+      rgba(255,107,0,0.015) 4px
+    );
+  }
+  .s1-play-btn {
+    width: 56px; height: 56px;
+    background: rgba(255,107,0,0.15);
+    border: 1.5px solid rgba(255,107,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .s1-play-btn::after {
+    content: '';
+    border-style: solid;
+    border-width: 10px 0 10px 18px;
+    border-color: transparent transparent transparent #ff6b00;
+    margin-left: 3px;
+  }
+
+  .s1-startbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-top: 1px solid #1a1a1a;
+    background: #0d0d0d;
+    flex-shrink: 0;
+  }
+  .s1-flag { color: #ff6b00; font-size: 11px; }
+  .s1-startbar-txt { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 0.06em; }
+  .s1-startbar-val { font-size: 10px; color: #ff6b00; font-family: 'Space Mono', monospace; }
+  .s1-startbar-act { font-size: 10px; color: #555; cursor: pointer; margin-left: 4px; text-decoration: underline; text-underline-offset: 2px; }
+  .s1-startbar-act:hover { color: #888; }
+  .s1-ml { margin-left: auto; }
+
+  .s1-controlbar {
+    flex-shrink: 0;
+    padding: 10px 16px 12px;
+    background: #0d0d0d;
+    border-top: 1px solid #1a1a1a;
+  }
+
+  .s1-progress {
+    position: relative;
+    height: 4px;
+    background: #1e1e1e;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  .s1-progress-fill {
+    position: absolute;
+    left: 0; top: 0;
+    width: 35%;
+    height: 100%;
+    background: #ff6b00;
+  }
+  .s1-progress-dot {
+    position: absolute;
+    width: 10px; height: 10px;
+    background: #ff6b00;
+    top: -3px;
+    left: calc(35% - 5px);
+  }
+  .s1-marker-dot {
+    position: absolute;
+    width: 6px; height: 6px;
+    background: #4a9eff;
+    top: -1px;
+  }
+
+  .s1-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .s1-time { font-size: 10px; color: #444; font-family: 'Space Mono', monospace; }
+  .s1-ctrl-btn {
+    background: none; border: none;
+    color: #444; font-size: 13px; cursor: pointer;
+    padding: 4px; transition: color 0.15s;
+  }
+  .s1-ctrl-btn:hover { color: #ff6b00; }
+  .s1-ctrl-btn.main-play {
+    width: 32px; height: 32px;
+    border: 1.5px solid #2a2a2a;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .s1-ctrl-btn.main-play:hover { border-color: #ff6b00; color: #ff6b00; }
+  .s1-center { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; }
+
+  /* ==============================
+     SCHEME 2: ALPINE CLEAN
+     Light + Sage Green, Refined Minimal
+  ============================== */
+  #s2 {
+    background: #f4f1ec;
+    min-height: 100vh;
+  }
+
+  .s2-app {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  .s2-topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+    height: 56px;
+    background: #f4f1ec;
+    border-bottom: 1px solid #d8d3c8;
+    flex-shrink: 0;
+  }
+
+  .s2-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3a2e;
+    letter-spacing: 0.02em;
+  }
+  .s2-logo span { color: #6b8f6d; }
+
+  .s2-sep { width: 1px; height: 18px; background: #d0cbc0; }
+
+  .s2-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: transparent;
+    border: 1px solid #c8c2b5;
+    color: #5a5448;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .s2-btn:hover { border-color: #6b8f6d; color: #2c3a2e; background: rgba(107,143,109,0.06); }
+  .s2-btn.primary {
+    background: #2c3a2e;
+    border-color: #2c3a2e;
+    color: #f4f1ec;
+  }
+  .s2-btn.primary:hover { background: #3d5040; }
+
+  .s2-players {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    overflow: hidden;
+  }
+
+  .s2-divider { background: #d8d3c8; }
+
+  .s2-panel {
+    display: flex;
+    flex-direction: column;
+    background: #f4f1ec;
+  }
+
+  .s2-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: #ede9e2;
+    border-bottom: 1px solid #d8d3c8;
+    flex-shrink: 0;
+  }
+
+  .s2-panel-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: #2c3a2e;
+    letter-spacing: 0.02em;
+  }
+
+  .s2-panel-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: #8a8070;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .s2-hdr-btn {
+    padding: 5px 12px;
+    background: transparent;
+    border: 1px solid #c8c2b5;
+    color: #7a7060;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.2s;
+  }
+  .s2-hdr-btn:hover { border-color: #6b8f6d; color: #2c3a2e; }
+
+  .s2-video-area {
+    flex: 1;
+    background: #e8e3da;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .s2-mock-video {
+    width: 88%;
+    height: 72%;
+    background: #1a1a1a;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .s2-mock-video::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.3) 100%);
+  }
+  .s2-play-btn {
+    width: 52px; height: 52px;
+    background: rgba(244,241,236,0.15);
+    backdrop-filter: blur(4px);
+    border: 1.5px solid rgba(244,241,236,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+  }
+  .s2-play-btn::after {
+    content: '';
+    border-style: solid;
+    border-width: 9px 0 9px 16px;
+    border-color: transparent transparent transparent rgba(244,241,236,0.9);
+    margin-left: 3px;
+  }
+
+  .s2-startbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 20px;
+    border-top: 1px solid #d8d3c8;
+    background: #ede9e2;
+    flex-shrink: 0;
+  }
+  .s2-flag { color: #6b8f6d; font-size: 12px; }
+  .s2-startbar-txt { font-family: 'DM Sans', sans-serif; font-size: 11px; color: #9a9082; }
+  .s2-startbar-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #3d5040; font-weight: 700; }
+  .s2-startbar-act { font-family: 'DM Sans', sans-serif; font-size: 11px; color: #6b8f6d; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .s2-ml { margin-left: auto; }
+
+  .s2-controlbar {
+    flex-shrink: 0;
+    padding: 10px 20px 14px;
+    background: #ede9e2;
+    border-top: 1px solid #d8d3c8;
+  }
+
+  .s2-progress {
+    position: relative;
+    height: 3px;
+    background: #d0cbc0;
+    margin-bottom: 10px;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .s2-progress-fill {
+    position: absolute;
+    left: 0; top: 0;
+    width: 28%;
+    height: 100%;
+    background: #6b8f6d;
+    border-radius: 2px;
+  }
+  .s2-progress-thumb {
+    position: absolute;
+    width: 11px; height: 11px;
+    background: #2c3a2e;
+    border-radius: 50%;
+    top: -4px;
+    left: calc(28% - 5.5px);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .s2-marker-line {
+    position: absolute;
+    width: 2px; height: 8px;
+    background: #b0956a;
+    top: -2.5px;
+    border-radius: 1px;
+  }
+
+  .s2-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .s2-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #9a9082; }
+  .s2-ctrl-btn {
+    background: none; border: none;
+    color: #9a9082; font-size: 13px; cursor: pointer;
+    padding: 4px; transition: color 0.2s;
+  }
+  .s2-ctrl-btn:hover { color: #2c3a2e; }
+  .s2-ctrl-btn.main-play {
+    width: 34px; height: 34px;
+    background: #2c3a2e;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #f4f1ec;
+    transition: background 0.2s;
+  }
+  .s2-ctrl-btn.main-play:hover { background: #3d5040; }
+  .s2-center { flex: 1; display: flex; align-items: center; justify-content: center; gap: 16px; }
+
+  /* ==============================
+     SCHEME 3: NEON SPORT
+     Dark Blue + Electric Cyan, Dynamic
+  ============================== */
+  #s3 {
+    background: #080c14;
+    min-height: 100vh;
+  }
+
+  .s3-app {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .s3-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    height: 54px;
+    background: linear-gradient(90deg, #0d1220 0%, #0a1018 100%);
+    border-bottom: 1px solid rgba(0,220,255,0.12);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .s3-topbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,220,255,0.3), transparent);
+  }
+
+  .s3-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-right: 4px;
+  }
+  .s3-logo em {
+    font-style: normal;
+    color: #00dcff;
+    text-shadow: 0 0 12px rgba(0,220,255,0.6);
+  }
+
+  .s3-sep { width: 1px; height: 20px; background: rgba(255,255,255,0.08); }
+
+  .s3-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #8a9ab0;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .s3-btn:hover { border-color: rgba(0,220,255,0.4); color: #00dcff; background: rgba(0,220,255,0.05); }
+  .s3-btn.primary {
+    background: linear-gradient(135deg, rgba(0,220,255,0.15) 0%, rgba(0,180,220,0.1) 100%);
+    border: 1px solid rgba(0,220,255,0.4);
+    color: #00dcff;
+    box-shadow: 0 0 16px rgba(0,220,255,0.1), inset 0 0 8px rgba(0,220,255,0.05);
+  }
+  .s3-btn.primary:hover {
+    box-shadow: 0 0 24px rgba(0,220,255,0.2), inset 0 0 12px rgba(0,220,255,0.08);
+  }
+
+  .s3-players {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .s3-panel {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(0,220,255,0.08);
+    position: relative;
+  }
+  .s3-panel:last-child { border-right: none; }
+
+  .s3-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    background: rgba(0,220,255,0.03);
+    border-bottom: 1px solid rgba(0,220,255,0.1);
+    flex-shrink: 0;
+  }
+
+  .s3-panel-badge {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #080c14;
+    background: #00dcff;
+    padding: 2px 8px;
+    border-radius: 3px;
+    box-shadow: 0 0 8px rgba(0,220,255,0.5);
+  }
+  .s3-panel-badge.b { background: #7b61ff; box-shadow: 0 0 8px rgba(123,97,255,0.5); }
+
+  .s3-panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    color: #4a5a70;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .s3-hdr-btn {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #4a5a70;
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .s3-hdr-btn:hover { border-color: rgba(0,220,255,0.3); color: #00dcff; }
+
+  .s3-video-area {
+    flex: 1;
+    background: #050810;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .s3-video-area::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,220,255,0.04) 0%, transparent 70%);
+  }
+
+  .s3-mock-video {
+    width: 88%;
+    height: 72%;
+    background: #0a0f1a;
+    border: 1px solid rgba(0,220,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .s3-mock-video::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 80px,
+      rgba(0,220,255,0.01) 80px,
+      rgba(0,220,255,0.01) 81px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 80px,
+      rgba(0,220,255,0.01) 80px,
+      rgba(0,220,255,0.01) 81px
+    );
+  }
+  .s3-play-btn {
+    width: 60px; height: 60px;
+    background: rgba(0,220,255,0.08);
+    border: 1.5px solid rgba(0,220,255,0.4);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 20px rgba(0,220,255,0.15);
+  }
+  .s3-play-btn::after {
+    content: '';
+    border-style: solid;
+    border-width: 10px 0 10px 18px;
+    border-color: transparent transparent transparent #00dcff;
+    margin-left: 4px;
+    filter: drop-shadow(0 0 4px rgba(0,220,255,0.8));
+  }
+
+  .s3-startbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 18px;
+    border-top: 1px solid rgba(0,220,255,0.08);
+    background: rgba(0,220,255,0.02);
+    flex-shrink: 0;
+  }
+  .s3-flag { color: #ff9500; font-size: 11px; text-shadow: 0 0 6px rgba(255,149,0,0.5); }
+  .s3-startbar-txt { font-family: 'Syne', sans-serif; font-size: 10px; color: #2a3a50; text-transform: uppercase; letter-spacing: 0.06em; }
+  .s3-startbar-val { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ff9500; text-shadow: 0 0 6px rgba(255,149,0,0.4); }
+  .s3-startbar-act { font-family: 'Syne', sans-serif; font-size: 10px; color: #00dcff; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; }
+  .s3-startbar-act:hover { opacity: 1; }
+  .s3-ml { margin-left: auto; }
+
+  .s3-controlbar {
+    flex-shrink: 0;
+    padding: 10px 18px 14px;
+    background: rgba(0,10,20,0.8);
+    border-top: 1px solid rgba(0,220,255,0.08);
+    backdrop-filter: blur(4px);
+  }
+
+  .s3-progress {
+    position: relative;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    margin-bottom: 10px;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  .s3-progress-fill {
+    position: absolute;
+    left: 0; top: 0;
+    width: 42%;
+    height: 100%;
+    background: linear-gradient(90deg, #00dcff, #0099cc);
+    border-radius: 2px;
+    box-shadow: 0 0 6px rgba(0,220,255,0.4);
+  }
+  .s3-progress-thumb {
+    position: absolute;
+    width: 10px; height: 10px;
+    background: #00dcff;
+    border-radius: 50%;
+    top: -3.5px;
+    left: calc(42% - 5px);
+    box-shadow: 0 0 8px rgba(0,220,255,0.8);
+  }
+  .s3-marker-dot {
+    position: absolute;
+    width: 3px; height: 10px;
+    background: #7b61ff;
+    top: -3.5px;
+    border-radius: 1.5px;
+    box-shadow: 0 0 4px rgba(123,97,255,0.6);
+  }
+
+  .s3-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .s3-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #2a3a50; }
+  .s3-ctrl-btn {
+    background: none; border: none;
+    color: #2a3a50; font-size: 13px; cursor: pointer;
+    padding: 4px; transition: all 0.2s;
+  }
+  .s3-ctrl-btn:hover { color: #00dcff; text-shadow: 0 0 8px rgba(0,220,255,0.5); }
+  .s3-ctrl-btn.main-play {
+    width: 36px; height: 36px;
+    background: rgba(0,220,255,0.1);
+    border: 1.5px solid rgba(0,220,255,0.4);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 0 12px rgba(0,220,255,0.1);
+  }
+  .s3-ctrl-btn.main-play:hover {
+    background: rgba(0,220,255,0.2);
+    box-shadow: 0 0 20px rgba(0,220,255,0.3);
+  }
+  .s3-ctrl-btn.main-play::after {
+    content: '';
+    border-style: solid;
+    border-width: 7px 0 7px 12px;
+    border-color: transparent transparent transparent #00dcff;
+    margin-left: 2px;
+  }
+  .s3-center { flex: 1; display: flex; align-items: center; justify-content: center; gap: 16px; }
+
+  /* Labels */
+  .scheme-label {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 24px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  #s1 .scheme-label { background: #ff6b00; color: #000; font-family: 'Space Mono', monospace; font-size: 11px; text-transform: uppercase; }
+  #s2 .scheme-label { background: #2c3a2e; color: #f4f1ec; font-family: 'DM Sans', sans-serif; }
+  #s3 .scheme-label { background: rgba(0,220,255,0.15); color: #00dcff; border: 1px solid rgba(0,220,255,0.3); font-family: 'Syne', sans-serif; text-transform: uppercase; font-size: 11px; letter-spacing: 0.08em; }
+
+  /* SVG icons inline replacement */
+  .ico { display: inline-flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showScheme(1, this)">方案一：暗黑工业风</button>
+  <button class="nav-btn" onclick="showScheme(2, this)">方案二：高山简约风</button>
+  <button class="nav-btn" onclick="showScheme(3, this)">方案三：霓虹运动风</button>
+</nav>
+
+<!-- =================== SCHEME 1 =================== -->
+<div id="s1" class="section active">
+  <div class="s1-app">
+    <div class="s1-topbar">
+      <button class="s1-btn">
+        <span>▦</span> 视频库
+      </button>
+      <div class="s1-sep"></div>
+      <button class="s1-btn primary">▶ 从起点同步播放</button>
+      <button class="s1-btn">⏸ 同步暂停</button>
+      <div class="s1-logo">攀岩复盘 CLIMB REVIEW</div>
+    </div>
+
+    <div class="s1-players">
+      <!-- Panel A -->
+      <div class="s1-panel">
+        <div class="s1-panel-header">
+          <span class="s1-panel-label">A</span>
+          <span class="s1-panel-title">2024_FINAL_RED_ROUTE.mp4</span>
+          <button class="s1-btn" style="padding: 4px 10px; font-size: 10px;">⊕ 打点列表</button>
+          <button class="s1-btn" style="padding: 4px 10px; font-size: 10px;">打开视频</button>
+        </div>
+        <div class="s1-video-area">
+          <div class="s1-mock-video">
+            <div class="s1-play-btn"></div>
+          </div>
+        </div>
+        <div class="s1-startbar">
+          <span class="s1-flag">⚑</span>
+          <span class="s1-startbar-txt">起点：</span>
+          <span class="s1-startbar-val">0:12</span>
+          <span class="s1-startbar-act">修改</span>
+          <span class="s1-startbar-act">清除</span>
+          <span class="s1-ml"></span>
+          <span class="s1-startbar-act">📷 设为封面</span>
+        </div>
+        <div class="s1-controlbar">
+          <div class="s1-progress">
+            <div class="s1-progress-fill"></div>
+            <div class="s1-progress-dot"></div>
+            <div class="s1-marker-dot" style="left: 20%;"></div>
+            <div class="s1-marker-dot" style="left: 55%;"></div>
+            <div class="s1-marker-dot" style="left: 72%;"></div>
+          </div>
+          <div class="s1-controls">
+            <span class="s1-time">1:24</span>
+            <div class="s1-center">
+              <button class="s1-ctrl-btn">«5</button>
+              <button class="s1-ctrl-btn main-play"></button>
+              <button class="s1-ctrl-btn">5»</button>
+            </div>
+            <button class="s1-ctrl-btn" title="打点">◎</button>
+            <span class="s1-time">4:02</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel B -->
+      <div class="s1-panel">
+        <div class="s1-panel-header">
+          <span class="s1-panel-label" style="color: #4a9eff;">B</span>
+          <span class="s1-panel-title">未加载视频</span>
+          <button class="s1-btn" style="padding: 4px 10px; font-size: 10px; opacity:0.4;">⊕ 打点列表</button>
+          <button class="s1-btn" style="padding: 4px 10px; font-size: 10px;">打开视频</button>
+        </div>
+        <div class="s1-video-area">
+          <div class="s1-video-hint">
+            <span class="icon">▭</span>
+            <p>拖入视频文件<br>或点击「打开视频」</p>
+          </div>
+        </div>
+        <div class="s1-startbar">
+          <span class="s1-flag" style="opacity:0.3;">⚑</span>
+          <span class="s1-startbar-txt" style="opacity:0.4;">未设置起点</span>
+          <span class="s1-startbar-act" style="opacity:0.4;">用当前位置设为起点</span>
+          <span class="s1-startbar-act" style="opacity:0.4;">手动输入</span>
+        </div>
+        <div class="s1-controlbar">
+          <div class="s1-progress" style="opacity:0.3;">
+            <div class="s1-progress-fill" style="width:0;"></div>
+          </div>
+          <div class="s1-controls" style="opacity:0.3;">
+            <span class="s1-time">0:00</span>
+            <div class="s1-center">
+              <button class="s1-ctrl-btn">«5</button>
+              <button class="s1-ctrl-btn main-play"></button>
+              <button class="s1-ctrl-btn">5»</button>
+            </div>
+            <button class="s1-ctrl-btn">◎</button>
+            <span class="s1-time">0:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scheme-label">方案一：MIDNIGHT INDUSTRIAL — 暗黑工业风</div>
+</div>
+
+<!-- =================== SCHEME 2 =================== -->
+<div id="s2" class="section">
+  <div class="s2-app">
+    <div class="s2-topbar">
+      <div class="s2-logo">攀岩 <span>复盘</span></div>
+      <div class="s2-sep"></div>
+      <button class="s2-btn">▦ 视频库</button>
+      <div class="s2-sep"></div>
+      <button class="s2-btn primary">▶ 从起点同步播放</button>
+      <button class="s2-btn">⏸ 同步暂停</button>
+    </div>
+
+    <div class="s2-players">
+      <!-- Panel A -->
+      <div class="s2-panel">
+        <div class="s2-panel-header">
+          <span class="s2-panel-label">视频 A</span>
+          <span class="s2-panel-title">2024_FINAL_RED_ROUTE.mp4</span>
+          <button class="s2-hdr-btn">⊕ 3个打点</button>
+          <button class="s2-hdr-btn">打开视频</button>
+        </div>
+        <div class="s2-video-area">
+          <div class="s2-mock-video">
+            <div class="s2-play-btn"></div>
+          </div>
+        </div>
+        <div class="s2-startbar">
+          <span class="s2-flag">⚑</span>
+          <span class="s2-startbar-txt">起点</span>
+          <span class="s2-startbar-val">0:12</span>
+          <span class="s2-startbar-act">修改</span>
+          <span class="s2-startbar-act" style="color:#9a9082;">清除</span>
+          <span class="s2-ml"></span>
+          <span class="s2-startbar-act">设为封面</span>
+        </div>
+        <div class="s2-controlbar">
+          <div class="s2-progress">
+            <div class="s2-progress-fill"></div>
+            <div class="s2-progress-thumb"></div>
+            <div class="s2-marker-line" style="left: 18%;"></div>
+            <div class="s2-marker-line" style="left: 52%;"></div>
+            <div class="s2-marker-line" style="left: 70%;"></div>
+          </div>
+          <div class="s2-controls">
+            <span class="s2-time">1:24</span>
+            <div class="s2-center">
+              <button class="s2-ctrl-btn">«5</button>
+              <button class="s2-ctrl-btn main-play">▶</button>
+              <button class="s2-ctrl-btn">5»</button>
+            </div>
+            <button class="s2-ctrl-btn" title="打点">◎</button>
+            <span class="s2-time">4:02</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="s2-divider"></div>
+
+      <!-- Panel B -->
+      <div class="s2-panel">
+        <div class="s2-panel-header">
+          <span class="s2-panel-label">视频 B</span>
+          <span class="s2-panel-title" style="color: #b8b0a0;">未加载视频</span>
+          <button class="s2-hdr-btn" style="opacity:0.4;">⊕ 打点列表</button>
+          <button class="s2-hdr-btn">打开视频</button>
+        </div>
+        <div class="s2-video-area">
+          <div style="text-align:center; color:#c8c2b5;">
+            <div style="font-size:48px; margin-bottom:12px; font-family:'Cormorant Garamond',serif; font-weight:300; opacity:0.4;">▭</div>
+            <p style="font-family:'DM Sans',sans-serif; font-size:12px; color:#b8b0a0; line-height:1.8;">拖入视频文件<br>或点击「打开视频」</p>
+          </div>
+        </div>
+        <div class="s2-startbar">
+          <span class="s2-flag" style="opacity:0.3;">⚑</span>
+          <span class="s2-startbar-txt" style="opacity:0.4;">未设置起点</span>
+          <span class="s2-startbar-act" style="opacity:0.4;">用当前位置设为起点</span>
+        </div>
+        <div class="s2-controlbar">
+          <div class="s2-progress" style="opacity:0.3;">
+            <div class="s2-progress-fill" style="width:0;"></div>
+          </div>
+          <div class="s2-controls" style="opacity:0.3;">
+            <span class="s2-time">0:00</span>
+            <div class="s2-center">
+              <button class="s2-ctrl-btn">«5</button>
+              <button class="s2-ctrl-btn main-play">▶</button>
+              <button class="s2-ctrl-btn">5»</button>
+            </div>
+            <button class="s2-ctrl-btn">◎</button>
+            <span class="s2-time">0:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scheme-label">方案二：ALPINE MINIMAL — 高山简约风</div>
+</div>
+
+<!-- =================== SCHEME 3 =================== -->
+<div id="s3" class="section">
+  <div class="s3-app">
+    <div class="s3-topbar">
+      <div class="s3-logo">攀岩 <em>复盘</em></div>
+      <div class="s3-sep"></div>
+      <button class="s3-btn">▦ 视频库</button>
+      <div class="s3-sep"></div>
+      <button class="s3-btn primary">▶ 从起点同步播放</button>
+      <button class="s3-btn">⏸ 同步暂停</button>
+    </div>
+
+    <div class="s3-players">
+      <!-- Panel A -->
+      <div class="s3-panel">
+        <div class="s3-panel-header">
+          <span class="s3-panel-badge">SLOT A</span>
+          <span class="s3-panel-title">2024_FINAL_RED_ROUTE.mp4</span>
+          <button class="s3-hdr-btn">⊕ 3</button>
+          <button class="s3-hdr-btn">打开视频</button>
+        </div>
+        <div class="s3-video-area">
+          <div class="s3-mock-video">
+            <div class="s3-play-btn"></div>
+          </div>
+        </div>
+        <div class="s3-startbar">
+          <span class="s3-flag">⚑</span>
+          <span class="s3-startbar-txt">起点</span>
+          <span class="s3-startbar-val">0:12</span>
+          <span class="s3-startbar-act">修改</span>
+          <span class="s3-startbar-act">清除</span>
+          <span class="s3-ml"></span>
+          <span class="s3-startbar-act">📷 封面</span>
+        </div>
+        <div class="s3-controlbar">
+          <div class="s3-progress">
+            <div class="s3-progress-fill"></div>
+            <div class="s3-progress-thumb"></div>
+            <div class="s3-marker-dot" style="left: 18%;"></div>
+            <div class="s3-marker-dot" style="left: 55%; background: #ff9500; box-shadow: 0 0 4px rgba(255,149,0,0.6);"></div>
+            <div class="s3-marker-dot" style="left: 72%;"></div>
+          </div>
+          <div class="s3-controls">
+            <span class="s3-time">1:24</span>
+            <div class="s3-center">
+              <button class="s3-ctrl-btn">«5</button>
+              <button class="s3-ctrl-btn main-play"></button>
+              <button class="s3-ctrl-btn">5»</button>
+            </div>
+            <button class="s3-ctrl-btn" title="打点" style="font-size:14px;">◎</button>
+            <span class="s3-time">4:02</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel B -->
+      <div class="s3-panel">
+        <div class="s3-panel-header">
+          <span class="s3-panel-badge b">SLOT B</span>
+          <span class="s3-panel-title">未加载视频</span>
+          <button class="s3-hdr-btn" style="opacity:0.3;">⊕ 打点列表</button>
+          <button class="s3-hdr-btn">打开视频</button>
+        </div>
+        <div class="s3-video-area">
+          <div style="text-align:center;">
+            <div style="font-size:44px; margin-bottom:14px; opacity:0.1; color:#00dcff;">▭</div>
+            <p style="font-family:'Syne',sans-serif; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#1a2a3a; line-height:2;">拖入视频文件<br>或点击「打开视频」</p>
+          </div>
+        </div>
+        <div class="s3-startbar" style="opacity:0.2;">
+          <span class="s3-flag">⚑</span>
+          <span class="s3-startbar-txt">未设置起点</span>
+          <span class="s3-startbar-act">用当前位置设为起点</span>
+        </div>
+        <div class="s3-controlbar" style="opacity:0.2;">
+          <div class="s3-progress">
+            <div class="s3-progress-fill" style="width:0;"></div>
+          </div>
+          <div class="s3-controls">
+            <span class="s3-time">0:00</span>
+            <div class="s3-center">
+              <button class="s3-ctrl-btn">«5</button>
+              <button class="s3-ctrl-btn main-play"></button>
+              <button class="s3-ctrl-btn">5»</button>
+            </div>
+            <button class="s3-ctrl-btn">◎</button>
+            <span class="s3-time">0:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scheme-label">方案三：NEON SPORT — 霓虹运动风</div>
+</div>
+
+<script>
+  function showScheme(n, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('s' + n).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>
