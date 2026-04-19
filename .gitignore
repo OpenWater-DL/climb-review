@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+*/.DS_Store
+
+# CodeBuddy / AI tools
+.codebuddy/
+
+# Xcode / Swift
+build/
+.build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcworkspace/private/
